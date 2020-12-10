@@ -14,6 +14,7 @@ socketio = SocketIO(app, cors_allowed_origins='*')
 
 test_data = {}
 
+
 @app.route('/data')
 def test_data():
     data = {}
@@ -22,9 +23,11 @@ def test_data():
     print("Serve data request")
     return jsonify(data)
 
+
 @socketio.on('message')
 def handle_message(message):
     print('received message: ' + message)
+
 
 @socketio.on('join')
 def handle_my_custom_event(str):
@@ -37,6 +40,14 @@ def handle_my_custom_event(str):
 def handle_my_custom_event(json):
     print('received test report: ' + str(json))
     socketio.emit('testreport', json, room='web')
+
+
+@socketio.on('save')
+def handle_save_event(_):
+    print('received save call, starting pytest')
+    cmd = 'cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest'
+    subprocess.Popen(cmd, shell=True)
+
 
 if __name__ == '__main__':
     socketio.run(app, port=9001, debug=True)
