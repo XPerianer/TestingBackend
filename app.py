@@ -7,12 +7,24 @@ from flask_socketio import join_room
 import subprocess
 import multitasking
 import json
+import joblib
+
+from pandas import DataFrame
+
+from src.predict_failing_tests import predict_failing_tests
 
 app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*')
 
 test_data = {}
+
+
+loaded_object = joblib.load('flask_simple_decision_tree.joblib')
+path = "/home/dominik/Studium/9_Semester/PLCTE/flask"
+encoder = loaded_object['encoder']
+predictor = loaded_object['predictor']
+test_ids_to_test_names = loaded_object['test_ids_to_test_names']
 
 
 @app.route('/data')
@@ -44,10 +56,20 @@ def handle_my_custom_event(json):
 
 @socketio.on('save')
 def handle_save_event(_):
-    print('received save call, starting pytest')
-    cmd = 'cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest'
-    subprocess.Popen(cmd, shell=True)
+    print('received save call, starting prediction')
+    t = predict_failing_tests(path, predictor, encoder, test_ids_to_test_names)
+    predicted_failure_names = []
+    for index in t:
+        predicted_failure_names.append(test_ids_to_test_names.at[index])
 
+    socketio.emit('predicted_failures', predicted_failure_names, room='web')
+
+    for i in t:
+        print(test_ids_to_test_names.at[i])
+    
+    print('starting pytest')
+    cmd = 'cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest > /dev/null'
+    subprocess.Popen(cmd, shell=True)
 
 if __name__ == '__main__':
     socketio.run(app, port=9001, debug=True)
