@@ -8,6 +8,7 @@ import subprocess
 import multitasking
 import json
 import joblib
+import shlex
 import pandas as pd
 
 from pandas import DataFrame
@@ -18,7 +19,7 @@ from src.predict_failing_tests import predict_failing_tests
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins='*')
+socketio = SocketIO(app, cors_allowed_origins='*', ping_timeout=999999)
 
 test_data = {}
 
@@ -37,7 +38,7 @@ failing_tests_key_value = failing_tests_lists.map(pd.value_counts)
 failing_tests_key_value.index = failing_tests_key_value.index.map(lambda x: "/home/dominik/Studium/9_Semester/PLCTE/flask/" + x)
 
 print(failing_tests_key_value)
-print(failing_tests_key_value.at["/home/dominik/Studium/9_Semester/PLCTE/flask/src/flask/json/__init__.py"])
+relevant_tests = pd.Series()
 
 @app.route('/data')
 def test_data():
@@ -92,9 +93,13 @@ def handle_save_event(_):
     for i in t:
         print(test_ids_to_test_names.at[i])
     
+    test_order = predicted_failure_names
+    print(f"Test Order: {test_order}")
     print('starting pytest')
-    cmd = 'cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest > /dev/null'
-    subprocess.Popen(cmd, shell=True)
+    cmd = f"cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest --test_ordering {shlex.quote(json.dumps(test_order))} > /dev/null"
+    print(cmd)
+    p = subprocess.Popen(cmd, shell=True)
+    p.wait(timeout=5)
 
 if __name__ == '__main__':
     socketio.run(app, port=9001, debug=True)
