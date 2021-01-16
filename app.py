@@ -31,11 +31,10 @@ predictor = loaded_object['predictor']
 test_ids_to_test_names = loaded_object['test_ids_to_test_names']
 
 # Generate Mutant Coverage Relevancy table
+# We generate a map from modified file path and modified method to the failing tests, in order to quickly find this information if the user is changing the context
 data = loading.load_dataset('data/flask_full.pkl')
-failing_tests_lists = data.loc[data["outcome"] == False].groupby("modified_file_path")["full_name"].agg(list)
+failing_tests_lists = data.loc[data["outcome"] == False].groupby(["modified_file_path", "modified_method"])["full_name"].agg(list)
 failing_tests_key_value = failing_tests_lists.map(pd.value_counts)
-# Change index to match exact filename TODO this could be much nicer
-failing_tests_key_value.index = failing_tests_key_value.index.map(lambda x: "/home/dominik/Studium/9_Semester/PLCTE/flask/" + x)
 
 print(failing_tests_key_value)
 relevant_tests = pd.Series()
@@ -68,6 +67,7 @@ def handle_my_custom_event(json):
 
 @socketio.on('onDidChangeVisibleTextEditors')
 def handle_did_change_visible_text_editors(textEditors):
+    return
     print('received changed visible text editors: ' + str(textEditors))
     relevant_tests = pd.Series()
     for textEditor in textEditors:
@@ -79,7 +79,21 @@ def handle_did_change_visible_text_editors(textEditors):
     print(relevant_tests)
     socketio.emit('relevanceUpdate', relevant_tests.to_json(), room='web')
 
+@socketio.on('onDidChangeTextEditorVisibleRanges')
+def handle_did_change_text_editors_visible_ranges(visibleMethodNames):
+    print('received onDidChangeTextEditorVisibleRanges call')
+    print(f"data: {visibleMethodNames}")
+    method_to_failing_tests_count = failing_tests_key_value.at[visibleMethodNames["filename"]]
+    relevant_tests = pd.Series()
+    add = lambda a, b: a + b
+    for method in visibleMethodNames["visibleMethodNames"]:
+        if method in method_to_failing_tests_count.index:
+            relevant_tests = relevant_tests.combine(method_to_failing_tests_count.at[method], add, fill_value=0)
 
+    print("Sending out the new relevancies")
+    print(relevant_tests)
+    socketio.emit('relevanceUpdate', relevant_tests.to_json(), room='web')
+        
 @socketio.on('save')
 def handle_save_event(_):
     print('received save call, starting prediction')
@@ -88,18 +102,13 @@ def handle_save_event(_):
     for index in t:
         predicted_failure_names.append(test_ids_to_test_names.at[index])
 
-    socketio.emit('predicted_failures', predicted_failure_names, room='web')
-
-    for i in t:
-        print(test_ids_to_test_names.at[i])
-    
     test_order = predicted_failure_names
     print(f"Test Order: {test_order}")
     print('starting pytest')
     cmd = f"cd /home/dominik/Studium/9_Semester/PLCTE/flask/ && . ../pytest-immediate/venv/bin/activate && pytest --test_ordering {shlex.quote(json.dumps(test_order))} > /dev/null"
     print(cmd)
     p = subprocess.Popen(cmd, shell=True)
-    p.wait(timeout=5)
+    socketio.emit('predicted_failures', predicted_failure_names, room='web')
 
 if __name__ == '__main__':
     socketio.run(app, port=9001, debug=True)
