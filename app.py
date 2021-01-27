@@ -14,8 +14,10 @@ import pandas as pd
 from pandas import DataFrame
 
 from src import loading
+from src import relevance
 
 from src.predict_failing_tests import predict_failing_tests
+
 
 app = Flask(__name__)
 CORS(app)
@@ -24,7 +26,7 @@ socketio = SocketIO(app, cors_allowed_origins='*', ping_timeout=999999)
 test_data = {}
 
 
-loaded_object = joblib.load('flask_simple_decision_tree.joblib')
+loaded_object = joblib.load('flask_randomforest.joblib')
 path = "/home/dominik/Studium/9_Semester/PLCTE/flask"
 encoder = loaded_object['encoder']
 predictor = loaded_object['predictor']
@@ -33,10 +35,8 @@ test_ids_to_test_names = loaded_object['test_ids_to_test_names']
 # Generate Mutant Coverage Relevancy table
 # We generate a map from modified file path and modified method to the failing tests, in order to quickly find this information if the user is changing the context
 data = loading.load_dataset('data/flask_full.pkl')
-failing_tests_lists = data.loc[data["outcome"] == False].groupby(["modified_file_path", "modified_method"])["full_name"].agg(list)
-failing_tests_key_value = failing_tests_lists.map(pd.value_counts)
+tfidf_data = relevance.tf_idf_preparation(data)
 
-print(failing_tests_key_value)
 relevant_tests = pd.Series()
 
 @app.route('/data')
@@ -62,18 +62,18 @@ def handle_my_custom_event(str):
 
 @socketio.on('testreport')
 def handle_my_custom_event(json):
-    print('received test report: ' + str(json))
+    # print('received test report: ' + str(json))
     socketio.emit('testreport', json, room='web')
 
 @socketio.on('onDidChangeVisibleTextEditors')
 def handle_did_change_visible_text_editors(textEditors):
-    return
     print('received changed visible text editors: ' + str(textEditors))
     relevant_tests = pd.Series()
     for textEditor in textEditors:
         print('visible file: ' + str(textEditor['filename']))
         add = lambda a, b: a + b
-        relevant_tests = relevant_tests.combine(failing_tests_key_value.at[textEditor['filename']], add, fill_value=0)
+        print(relevance.tf_idf_from_file_path(textEditor['filename'], tfidf_data))
+        relevant_tests = relevant_tests.combine(relevance.tf_idf_from_file_path(textEditor['filename'], tfidf_data), add, fill_value=0)
 
     print("Sending out the new relevancies")
     print(relevant_tests)
@@ -81,6 +81,7 @@ def handle_did_change_visible_text_editors(textEditors):
 
 @socketio.on('onDidChangeTextEditorVisibleRanges')
 def handle_did_change_text_editors_visible_ranges(visibleMethodNames):
+    return
     print('received onDidChangeTextEditorVisibleRanges call')
     print(f"data: {visibleMethodNames}")
     method_to_failing_tests_count = failing_tests_key_value.at[visibleMethodNames["filename"]]
