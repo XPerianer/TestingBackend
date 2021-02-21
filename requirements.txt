@@ -1,0 +1,12 @@
+editdistance>=0.5.3
+eventlet>=0.29.1
+flake8>=3.8.4
+flask-cors>=3.0.9
+flask-socketio>=4.3.2
+gevent-websocket>=0.10.1
+gitpython>=3.1.11
+ipykernel>=5.4.2
+licenseheaders>=0.8.7
+multitasking>=0.0.9
+sklearn
+unidiff>=0.6.0
