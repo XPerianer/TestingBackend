@@ -1,0 +1,3 @@
+PREDICTOR_MODEL_JOBLIB_FILE = 'flask_randomforest.joblib'
+MUTATION_TESTING_FILE = 'data/flask_full.pkl'
+REPOSITORY_PATH = '/home/dominik/Studium/9_Semester/PLCTE/flask'

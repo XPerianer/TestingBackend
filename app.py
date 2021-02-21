@@ -34,6 +34,7 @@ import json
 import joblib
 import shlex
 import pandas as pd
+import time
 
 from pandas import DataFrame
 
@@ -43,22 +44,23 @@ from src import relevance
 from src.predict_failing_tests import predict_failing_tests
 
 
+
 app = Flask(__name__)
+app.config.from_pyfile('config.cgf')
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*', ping_timeout=999999)
 
 test_data = {}
 
 
-loaded_object = joblib.load('flask_randomforest.joblib')
-path = "/home/dominik/Studium/9_Semester/PLCTE/flask"
+loaded_object = joblib.load(app.config['PREDICTOR_MODEL_JOBLIB_FILE'])
 encoder = loaded_object['encoder']
 predictor = loaded_object['predictor']
 test_ids_to_test_names = loaded_object['test_ids_to_test_names']
 
 # Generate Mutant Coverage Relevancy table
 # We generate a map from modified file path and modified method to the failing tests, in order to quickly find this information if the user is changing the context
-data = loading.load_dataset('data/flask_full.pkl')
+data = loading.load_dataset(app.config['MUTATION_TESTING_FILE'])
 tfidf_data = relevance.tf_idf_preparation(data)
 
 relevant_tests = pd.Series()
@@ -86,7 +88,8 @@ def handle_my_custom_event(str):
 
 @socketio.on('testreport')
 def handle_my_custom_event(json):
-    # print('received test report: ' + str(json))
+    #print('received test report: ' + str(json))
+    #print(time.time_ns())
     socketio.emit('testreport', json, room='web')
 
 @socketio.on('onDidChangeVisibleTextEditors')
@@ -122,7 +125,7 @@ def handle_did_change_text_editors_visible_ranges(visibleMethodNames):
 @socketio.on('save')
 def handle_save_event(_):
     print('received save call, starting prediction')
-    t = predict_failing_tests(path, predictor, encoder, test_ids_to_test_names)
+    t = predict_failing_tests(app.config['REPOSITORY_PATH'], predictor, encoder, test_ids_to_test_names)
     predicted_failure_names = []
     for index in t:
         predicted_failure_names.append(test_ids_to_test_names.at[index])
