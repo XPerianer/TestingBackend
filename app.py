@@ -111,30 +111,6 @@ def handle_did_change_visible_text_editors(textEditors):
     socketio.emit("relevanceUpdate", relevant_tests.to_json(), room="web")
 
 
-@socketio.on("onDidChangeTextEditorVisibleRanges")
-def handle_did_change_text_editors_visible_ranges(visibleMethodNames):
-    return
-    print("received onDidChangeTextEditorVisibleRanges call")
-    print(f"data: {visibleMethodNames}")
-    method_to_failing_tests_count = failing_tests_key_value.at[
-        visibleMethodNames["filename"]
-    ]
-    relevant_tests = pd.Series()
-
-    def add(a, b):
-        return a + b
-
-    for method in visibleMethodNames["visibleMethodNames"]:
-        if method in method_to_failing_tests_count.index:
-            relevant_tests = relevant_tests.combine(
-                method_to_failing_tests_count.at[method], add, fill_value=0
-            )
-
-    print("Sending out the new relevancies")
-    print(relevant_tests)
-    socketio.emit("relevanceUpdate", relevant_tests.to_json(), room="web")
-
-
 @socketio.on("save")
 def handle_save_event(_):
     print("received save call, starting prediction")
