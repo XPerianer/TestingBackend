@@ -29,7 +29,7 @@ import numpy as np
 # a specific combination of test and filepath
 # It returns a series with test_names and modified_file_path as a hierarchical index to the tfidf
 def tf_idf_preparation(data):
-    test_failures = data.loc[data["outcome"] is False]
+    test_failures = data.loc[data["outcome"] == False]
     N = len(data.groupby("filepath"))
     idf_counts = (
         test_failures.groupby(["full_name", "modified_file_path"])
