@@ -44,12 +44,10 @@ from src import relevance
 from src.predict_failing_tests import predict_failing_tests
 
 
-
 app = Flask(__name__)
 app.config.from_pyfile('config.cgf')
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins='*', ping_timeout=999999)
-
 test_data = {}
 
 
@@ -59,11 +57,13 @@ predictor = loaded_object['predictor']
 test_ids_to_test_names = loaded_object['test_ids_to_test_names']
 
 # Generate Mutant Coverage Relevancy table
-# We generate a map from modified file path and modified method to the failing tests, in order to quickly find this information if the user is changing the context
+# We generate a map from modified file path and modified method to the failing tests,
+# in order to quickly find this information if the user is changing the context
 data = loading.load_dataset(app.config['MUTATION_TESTING_FILE'])
 tfidf_data = relevance.tf_idf_preparation(data)
 
 relevant_tests = pd.Series()
+
 
 @app.route('/data')
 def test_data():
@@ -87,10 +87,11 @@ def handle_my_custom_event(str):
 
 
 @socketio.on('testreport')
-def handle_my_custom_event(json):
+def handle_testreport(json):
     #print('received test report: ' + str(json))
     #print(time.time_ns())
     socketio.emit('testreport', json, room='web')
+
 
 @socketio.on('onDidChangeVisibleTextEditors')
 def handle_did_change_visible_text_editors(textEditors):
@@ -121,7 +122,8 @@ def handle_did_change_text_editors_visible_ranges(visibleMethodNames):
     print("Sending out the new relevancies")
     print(relevant_tests)
     socketio.emit('relevanceUpdate', relevant_tests.to_json(), room='web')
-        
+
+
 @socketio.on('save')
 def handle_save_event(_):
     print('received save call, starting prediction')
