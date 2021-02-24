@@ -33,6 +33,7 @@ import json
 import joblib
 import shlex
 import pandas as pd
+import time
 
 from src import loading
 from src import relevance
@@ -84,8 +85,8 @@ def handle_my_custom_event(str):
 
 @socketio.on("testreport")
 def handle_testreport(json):
-    # print('received test report: ' + str(json))
-    # print(time.time_ns())
+    print("received test report: " + str(json))
+    json["timestamp"] = time.time_ns()
     socketio.emit("testreport", json, room="web")
 
 
@@ -124,9 +125,11 @@ def handle_save_event(_):
     test_order = predicted_failure_names
     print(f"Test Order: {test_order}")
     print("starting pytest")
-    cmd = ("cd /home/dominik/Studium/9_Semester/PLCTE/flask/ "
-           "&& . ../pytest-immediate/venv/bin/activate "
-           f"&& pytest --test_ordering {shlex.quote(json.dumps(test_order))} > /dev/null")
+    cmd = (
+        "cd /home/dominik/Studium/9_Semester/PLCTE/flask/ "
+        "&& . ../pytest-immediate/venv/bin/activate "
+        f"&& pytest --send-reports --test-ordering {shlex.quote(json.dumps(test_order))} > /dev/null"
+    )
     print(cmd)
     subprocess.Popen(cmd, shell=True)
     socketio.emit("predicted_failures", predicted_failure_names, room="web")
