@@ -86,7 +86,7 @@ def handle_my_custom_event(str):
 @socketio.on("testreport")
 def handle_testreport(json):
     print("received test report: " + str(json))
-    json["timestamp"] = time.time_ns()
+    json["timestamp"] = time.time_ns() / 1_000_000  # Generate timestamp in ms
     socketio.emit("testreport", json, room="web")
 
 
