@@ -65,7 +65,7 @@ relevant_tests = pd.Series()
 @app.route("/data")
 def test_data():
     data = {}
-    with open("test_visualization_data.json") as json_file:
+    with open(app.config["TEST_JSON_FILE"]) as json_file:
         data = json.load(json_file)
     print("Serve data request")
     return jsonify(data)
