@@ -10,3 +10,4 @@ licenseheaders>=0.8.7
 multitasking>=0.0.9
 sklearn
 unidiff>=0.6.0
+pandas>=1.0.0
