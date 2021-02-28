@@ -127,7 +127,7 @@ def handle_save_event(_):
     print("starting pytest")
     cmd = (
         f"cd {app.config['REPOSITORY_PATH']} "
-        f"&& . {app.config['VIRTUAL_ENVIRONMENT_PATH']}/venv/bin/activate "
+        f"&& . {app.config['VIRTUAL_ENVIRONMENT_PATH']}/bin/activate "
         f"&& pytest --send-reports --test-ordering {shlex.quote(json.dumps(test_order))} > /dev/null"
     )
     print(cmd)
