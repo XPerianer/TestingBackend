@@ -2,6 +2,7 @@
 [![Build Status](https://travis-ci.com/XPerianer/TestingBackend.svg?branch=main)](https://travis-ci.com/XPerianer/TestingBackend)
 
 This is the Backend for [TestingPlugin](https://github.com/XPerianer/TestingPlugin).
+It is part of the [ImmediateTestFeedback](https://github.com/XPerianer/ImmediateTestFeedback) ecosystem.
 It provides query options for the relevance of tests and the option to run tests prioritized by predicted failures.
 
 
@@ -46,3 +47,7 @@ starts the server. At the beginning, some relevance information is prefetched fr
 A simple check to test if the server is functional is to open [http://localhost:9001/data](http://localhost:9001/data) in a browser. This should return the `.json` set up in the configuration.
 
 With the server up and running, everything is set up to open the [TestingPlugin](https://github.com/XPerianer/TestingPlugin)
+
+## Debug Information
+After connection of a TestingPlugin, debug information on the different queries to the server are printed in the console.
+If, for example, a file is not present in the Mutation Testing Dataset, a ```KeyError: 'non/existent/filename.py'``` is issued.
