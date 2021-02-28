@@ -1,4 +1,5 @@
 # TestingBackend
+[![Build Status](https://travis-ci.com/XPerianer/TestingBackend.svg?branch=main)](https://travis-ci.com/XPerianer/TestingBackend)
 
 This is the Backend for [TestingPlugin](https://github.com/XPerianer/TestingPlugin).
 It provides query options for the relevance of tests and the option to run tests prioritized by predicted failures.
